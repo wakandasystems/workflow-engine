@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: form_engine
+      MYSQL_USER: wakandahrm_user
+      MYSQL_PASSWORD: "B12aW*52"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "mysql://wakandahrm_user:B12aW*52@db:3306/form_engine"
+      JWT_SECRET: "assessment-jwt-secret-key-change-in-production"
+      PORT: "3001"
+      FRONTEND_URL: "http://localhost:5173"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma db push --skip-generate && npx tsx prisma/seed.ts && node dist/index.js"
+
+volumes:
+  db_data:

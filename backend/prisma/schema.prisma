@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  APPLICANT
+  REVIEWER
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  name         String
+  role         Role
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  applications Application[] @relation("applicant")
+  auditLogs    AuditLog[]    @relation("actor")
+
+  @@map("users")
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  title       String
+  category    String
+  description String            @db.VarChar(2000) @default("")
+  amount      Float?
+  status      ApplicationStatus @default(DRAFT)
+  applicantId String            @map("applicant_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  applicant   User              @relation("applicant", fields: [applicantId], references: [id])
+  auditLogs   AuditLog[]
+
+  @@index([applicantId])
+  @@index([status])
+  @@map("applications")
+}
+
+model AuditLog {
+  id            String            @id @default(uuid())
+  applicationId String            @map("application_id")
+  actorId       String            @map("actor_id")
+  oldStatus     ApplicationStatus @map("old_status")
+  newStatus     ApplicationStatus @map("new_status")
+  comment       String?           @db.Text
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  application   Application       @relation(fields: [applicationId], references: [id])
+  actor         User              @relation("actor", fields: [actorId], references: [id])
+
+  @@index([applicationId])
+  @@map("audit_logs")
+}
