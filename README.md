@@ -6,9 +6,9 @@ A two-sided web application for a generic request submission and approval proces
 
 ## Live Demo
 
-> **URL:** _[to be added after deployment]_
+> **URL:** `https://asg.wakandasystems.com`
 >
-> **Test Credentials:**
+> **Test Credentials** (local and deployed):
 > | Role | Email | Password |
 > |------|-------|----------|
 > | Applicant | `applicant@example.com` | `password123` |
@@ -23,8 +23,8 @@ A two-sided web application for a generic request submission and approval proces
 |-------|-----------|
 | Frontend | React 19 + TypeScript, Vite, Tailwind CSS v4, TanStack Query, React Router |
 | Backend | Node.js + Express 5 + TypeScript |
-| Database | MySQL 8.0 |
-| ORM | Prisma (schema-first, auto-migrations) |
+| Database | PostgreSQL 16 |
+| ORM | Prisma (schema-first, versioned migrations) |
 | Auth | JWT (jsonwebtoken + bcryptjs) |
 | Validation | Zod (backend), HTML5 + client-side (frontend) |
 | Testing | Vitest + Supertest |
@@ -37,7 +37,7 @@ A two-sided web application for a generic request submission and approval proces
 ### Prerequisites
 
 - Node.js 20+
-- MySQL 8.0 running locally (or use Docker Compose)
+- PostgreSQL running locally on port `5433` (or use Docker Compose)
 
 ### Option A: Docker Compose (database + backend)
 
@@ -45,7 +45,7 @@ A two-sided web application for a generic request submission and approval proces
 docker-compose up -d
 ```
 
-This starts MySQL and the backend on port 3001. Then start the frontend:
+This starts PostgreSQL and the backend on port 3001. Then start the frontend:
 
 ```bash
 cd frontend
@@ -59,10 +59,10 @@ Open http://localhost:5173
 
 **1. Database**
 
-Ensure MySQL is running and create the database:
+Ensure PostgreSQL is running and create the database:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS form_engine;
+CREATE DATABASE form_engine;
 ```
 
 **2. Backend**
@@ -70,9 +70,9 @@ CREATE DATABASE IF NOT EXISTS form_engine;
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env with your MySQL credentials
+# Edit .env with your PostgreSQL credentials
 npm install
-npx prisma db push
+npx prisma migrate deploy
 npx tsx prisma/seed.ts
 npm run dev
 ```
@@ -115,7 +115,7 @@ Frontend starts on http://localhost:5173
 - **Enum for status** — database-level constraint ensures only valid statuses can exist; the state machine logic is enforced in application code.
 - **Enum for roles** — simple two-role system (APPLICANT, REVIEWER) enforced at the database level.
 - **Audit log as append-only table** — every status transition is recorded with actor, old/new status, optional comment, and timestamp. Never updated or deleted.
-- **MySQL with Prisma** — Prisma provides type-safe queries, automatic migrations, and a clean schema-first workflow.
+- **PostgreSQL with Prisma** — Prisma provides type-safe queries, structured relations, and versioned schema changes through committed migrations.
 
 ---
 
@@ -206,7 +206,7 @@ npm test
 
 2. **No pagination on list endpoints** — fine for a demo with few records; would add cursor-based pagination for production.
 
-3. **Prisma `db push` instead of versioned migrations** — faster for prototyping; production would use `prisma migrate dev` for versioned, reviewable migration files.
+3. **Single baseline migration** — sufficient for this assessment; in a longer-lived project I would add incremental migrations for each schema change as the workflow evolves.
 
 4. **No file attachments** — the assignment listed this as optional; I prioritized the core workflow and tests.
 
@@ -214,7 +214,7 @@ npm test
 
 ### What I'd Add
 
-- **Versioned migrations** — `prisma migrate dev` for production-safe schema changes.
+- **Additional incremental migrations** — keep evolving the schema with smaller reviewable migration steps as requirements change.
 - **Pagination + search** — cursor-based pagination on list endpoints, full-text search on title/description.
 - **Email/in-app notifications** — notify applicants on status changes, reviewers on new submissions.
 - **Rate limiting** — protect auth endpoints from brute force.
@@ -234,12 +234,12 @@ npm test
 
 - **Scaffolding** — generating initial project structure, boilerplate configuration files, and component templates.
 - **Code generation** — writing CRUD routes, state machine logic, test cases, and React components with guidance on architecture decisions.
-- **Debugging** — diagnosing MySQL compatibility issues (TEXT columns can't have defaults), fixing dependency installation issues.
+- **Debugging** — diagnosing schema compatibility issues and fixing dependency installation issues.
 - **Documentation** — drafting this README structure.
 
 ### What I Verified
 
-- **Every test** — ran all 40 tests and verified they pass against a real MySQL database.
+- **Every test** — ran all 40 tests and verified they pass against a real PostgreSQL database.
 - **State machine correctness** — manually verified each transition rule matches the assignment specification.
 - **Authorization enforcement** — confirmed via tests that role checks and ownership checks work correctly, including edge cases (self-approval, cross-user access).
 - **Frontend behavior** — tested login flow, form creation/editing, status transitions, and audit trail display.
