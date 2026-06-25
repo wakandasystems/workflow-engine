@@ -149,8 +149,9 @@ router.post("/", authorize("APPLICANT"), async (req, res) => {
 
 // PATCH /applications/:id — update a draft (owner only)
 router.patch("/:id", authorize("APPLICANT"), async (req, res) => {
+  const id = req.params.id as string;
   const application = await prisma.application.findUnique({
-    where: { id: req.params.id },
+    where: { id },
   });
 
   if (!application) {
@@ -180,7 +181,7 @@ router.patch("/:id", authorize("APPLICANT"), async (req, res) => {
   }
 
   const updated = await prisma.application.update({
-    where: { id: req.params.id },
+    where: { id },
     data: parsed.data,
     include: {
       applicant: { select: { id: true, name: true, email: true } },
@@ -262,8 +263,9 @@ router.post("/:id/transition", async (req, res) => {
 
 // DELETE /applications/:id — delete a draft (owner only)
 router.delete("/:id", authorize("APPLICANT"), async (req, res) => {
+  const id = req.params.id as string;
   const application = await prisma.application.findUnique({
-    where: { id: req.params.id },
+    where: { id },
   });
 
   if (!application) {
@@ -283,7 +285,7 @@ router.delete("/:id", authorize("APPLICANT"), async (req, res) => {
     return;
   }
 
-  await prisma.application.delete({ where: { id: req.params.id } });
+  await prisma.application.delete({ where: { id } });
   res.status(204).send();
 });
 

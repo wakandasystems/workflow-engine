@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { AxiosError } from "axios";
 
+const TEST_ACCOUNTS = [
+  { label: "Applicant", email: "applicant@example.com", password: "password123" },
+  { label: "Applicant 2", email: "applicant2@example.com", password: "password123" },
+  { label: "Reviewer", email: "reviewer@example.com", password: "password123" },
+];
+
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -10,6 +16,14 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [autofilled, setAutofilled] = useState<string | null>(null);
+
+  const handleQuickFill = (account: (typeof TEST_ACCOUNTS)[number]) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    setError("");
+    setAutofilled(account.label);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -59,7 +73,10 @@ export function LoginPage() {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setAutofilled(null);
+              }}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="applicant@example.com"
             />
@@ -76,11 +93,19 @@ export function LoginPage() {
               type="password"
               required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setAutofilled(null);
+              }}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="password123"
             />
           </div>
+          {autofilled && (
+            <div className="bg-green-50 text-green-700 px-4 py-3 rounded text-sm flex items-center gap-2">
+              <span>✓ Auto-filled as {autofilled} — click Sign in to continue</span>
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -89,16 +114,22 @@ export function LoginPage() {
             {loading ? "Signing in..." : "Sign in"}
           </button>
           <div className="text-xs text-gray-500 border-t pt-4 space-y-1">
-            <p className="font-medium">Test Credentials:</p>
-            <p>
-              Applicant: <code>applicant@example.com</code> / <code>password123</code>
-            </p>
-            <p>
-              Applicant 2: <code>applicant2@example.com</code> / <code>password123</code>
-            </p>
-            <p>
-              Reviewer: <code>reviewer@example.com</code> / <code>password123</code>
-            </p>
+            <p className="font-medium">Test Credentials (click to autofill):</p>
+            {TEST_ACCOUNTS.map((account) => (
+              <button
+                key={account.email}
+                type="button"
+                onClick={() => handleQuickFill(account)}
+                className="w-full flex items-center justify-between rounded px-2 py-1.5 text-left hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              >
+                <span>
+                  {account.label}: <code>{account.email}</code> / <code>{account.password}</code>
+                </span>
+                {autofilled === account.label && (
+                  <span className="text-green-600 font-medium">✓</span>
+                )}
+              </button>
+            ))}
           </div>
         </form>
       </div>
